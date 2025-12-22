@@ -1,0 +1,7 @@
+{
+  "name": "G-Tune Pro",
+  "description": "Professional-grade chromatic guitar tuner with real-time feedback and AI assistance.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
