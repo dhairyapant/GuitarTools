@@ -3,7 +3,6 @@ import { Mic, MicOff, AlertCircle } from 'lucide-react';
 import { useTuner } from './hooks/useTuner';
 import { TunerGauge } from './components/TunerGauge';
 import { StringSelector } from './components/StringSelector';
-import { GeminiAssistant } from './components/GeminiAssistant';
 
 function App() {
   const { 
@@ -82,9 +81,6 @@ function App() {
             </button>
         )}
       </footer>
-
-      {/* AI Assistant */}
-      <GeminiAssistant />
 
     </div>
   );
