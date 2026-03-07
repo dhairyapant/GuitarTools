@@ -6,11 +6,16 @@
 // Frequency range for standard guitar tuning (plus headroom)
 // Low E is ~82Hz. High E (12th fret) is ~660Hz.
 // We allow a bit wider range for drop tunings or user error, but cap it to avoid high freq noise.
-const MIN_FREQ = 65; 
+const MIN_FREQ = 65;
 const MAX_FREQ = 1000;
 
 // Threshold for the absolute threshold step (Step 3)
 const YIN_THRESHOLD = 0.15;
+
+export interface PitchResult {
+  frequency: number;  // detected frequency in Hz, or -1 for silence/invalid
+  clarity: number;    // 0.0 (noisy) to 1.0 (pure tone)
+}
 
 export const getRMS = (buffer: Float32Array): number => {
   let sum = 0;
@@ -20,12 +25,14 @@ export const getRMS = (buffer: Float32Array): number => {
   return Math.sqrt(sum / buffer.length);
 };
 
-export const autoCorrelate = (rawBuffer: Float32Array, sampleRate: number): number => {
+export const autoCorrelate = (rawBuffer: Float32Array, sampleRate: number): PitchResult => {
+  const SILENCE: PitchResult = { frequency: -1, clarity: 0 };
+
   // 1. RMS Check for Silence
   const rms = getRMS(rawBuffer);
   // Slightly higher noise floor threshold to reject background hum
   if (rms < 0.015) {
-    return -1;
+    return SILENCE;
   }
 
   // 2. Pre-processing: Simple Low-Pass Filter (Moving Average)
@@ -34,10 +41,10 @@ export const autoCorrelate = (rawBuffer: Float32Array, sampleRate: number): numb
   const buffer = new Float32Array(bufferLength);
   for (let i = 0; i < bufferLength; i++) {
     if (i === 0 || i === bufferLength - 1) {
-        buffer[i] = rawBuffer[i];
+      buffer[i] = rawBuffer[i];
     } else {
-        // 3-point moving average
-        buffer[i] = (rawBuffer[i-1] + rawBuffer[i] + rawBuffer[i+1]) / 3;
+      // 3-point moving average
+      buffer[i] = (rawBuffer[i - 1] + rawBuffer[i] + rawBuffer[i + 1]) / 3;
     }
   }
 
@@ -60,9 +67,9 @@ export const autoCorrelate = (rawBuffer: Float32Array, sampleRate: number): numb
   for (let tau = 1; tau < yinBufferLength; tau++) {
     runningSum += yinBuffer[tau];
     if (runningSum === 0) {
-        yinBuffer[tau] = 1;
+      yinBuffer[tau] = 1;
     } else {
-        yinBuffer[tau] *= tau / runningSum;
+      yinBuffer[tau] *= tau / runningSum;
     }
   }
 
@@ -79,6 +86,7 @@ export const autoCorrelate = (rawBuffer: Float32Array, sampleRate: number): numb
   }
 
   // Fallback to global minimum if no threshold match
+  let yinDipValue = 0; // Track the YIN dip for clarity calculation
   if (tauEstimate === -1) {
     let globalMin = 100;
     for (let tau = 2; tau < yinBufferLength; tau++) {
@@ -89,8 +97,11 @@ export const autoCorrelate = (rawBuffer: Float32Array, sampleRate: number): numb
     }
     // Stricter probability check for fallback
     if (globalMin > 0.3) {
-        return -1;
+      return SILENCE;
     }
+    yinDipValue = globalMin;
+  } else {
+    yinDipValue = yinBuffer[tauEstimate];
   }
 
   // --- Step 4: Parabolic Interpolation ---
@@ -101,8 +112,8 @@ export const autoCorrelate = (rawBuffer: Float32Array, sampleRate: number): numb
     const s2 = yinBuffer[tauEstimate + 1];
     const denom = 2 * s1 - s2 - s0;
     if (denom !== 0) {
-        const adjustment = (s2 - s0) / (2 * denom);
-        betterTau += adjustment;
+      const adjustment = (s2 - s0) / (2 * denom);
+      betterTau += adjustment;
     }
   }
 
@@ -110,10 +121,14 @@ export const autoCorrelate = (rawBuffer: Float32Array, sampleRate: number): numb
 
   // --- Step 5: Frequency Range Sanity Check ---
   if (frequency < MIN_FREQ || frequency > MAX_FREQ) {
-      return -1;
+    return SILENCE;
   }
 
-  return frequency;
+  // Clarity: 1.0 = perfect periodicity, 0.0 = noise
+  // YIN dip of 0 means perfect match, so clarity = 1 - dip
+  const clarity = Math.max(0, Math.min(1, 1 - yinDipValue));
+
+  return { frequency, clarity };
 };
 
 export const noteFromPitch = (frequency: number) => {

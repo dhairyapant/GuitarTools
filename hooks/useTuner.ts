@@ -1,7 +1,35 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { autoCorrelate, noteFromPitch, frequencyFromNoteNumber, centsOffFromPitch } from '../utils/pitchDetection';
-import { BUFFER_SIZE, STANDARD_TUNING, ALL_NOTES, IN_TUNE_THRESHOLD_CENTS } from '../constants';
+import { autoCorrelate, noteFromPitch, frequencyFromNoteNumber, centsOffFromPitch, PitchResult } from '../utils/pitchDetection';
+import { BUFFER_SIZE, TUNINGS, ALL_NOTES, IN_TUNE_THRESHOLD_CENTS } from '../constants';
 import { TuningStatus, StringName } from '../types';
+
+interface PitchSample {
+  frequency: number;
+  clarity: number;
+}
+
+// Lock-on: how many consecutive high-clarity frames to "lock" the needle
+const LOCK_ON_CLARITY_THRESHOLD = 0.85;
+const LOCK_ON_FRAMES_REQUIRED = 3;
+const PITCH_BUFFER_SIZE = 7; // rolling window of samples
+
+/** Clarity-weighted average: high-confidence frames dominate the result */
+function getWeightedFrequency(samples: PitchSample[]): number {
+  if (samples.length === 0) return 0;
+  if (samples.length === 1) return samples[0].frequency;
+
+  let weightedSum = 0;
+  let totalWeight = 0;
+
+  for (const sample of samples) {
+    // Square the clarity to strongly favor clean frames
+    const weight = sample.clarity * sample.clarity;
+    weightedSum += sample.frequency * weight;
+    totalWeight += weight;
+  }
+
+  return totalWeight > 0 ? weightedSum / totalWeight : samples[samples.length - 1].frequency;
+}
 
 export const useTuner = () => {
   const [isListening, setIsListening] = useState(false);
@@ -12,6 +40,8 @@ export const useTuner = () => {
     isInTune: false
   });
   const [selectedString, setSelectedString] = useState<StringName>(StringName.AUTO);
+  const [tuningId, setTuningId] = useState<string>('standard');
+  const [pitchOffset, setPitchOffset] = useState<number>(0);
   const [permissionError, setPermissionError] = useState<string | null>(null);
 
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -19,9 +49,11 @@ export const useTuner = () => {
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const rafIdRef = useRef<number | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  
-  // Buffer for median smoothing
-  const pitchBufferRef = useRef<number[]>([]);
+
+  // Weighted temporal stability buffers
+  const pitchBufferRef = useRef<PitchSample[]>([]);
+  const lockOnCountRef = useRef<number>(0);
+  const lockedFrequencyRef = useRef<number | null>(null);
 
   const updatePitch = useCallback(() => {
     if (!analyserRef.current || !audioContextRef.current) return;
@@ -30,54 +62,79 @@ export const useTuner = () => {
     analyserRef.current.getFloatTimeDomainData(buffer);
     const sampleRate = audioContextRef.current.sampleRate;
 
-    const rawFrequency = autoCorrelate(buffer, sampleRate);
+    const result: PitchResult = autoCorrelate(buffer, sampleRate);
 
-    if (rawFrequency === -1) {
-      // Silence or invalid detection.
-      // We gradually clear the buffer or keep the last known for a brief moment?
-      // Clearing is safer for "instant" feedback of silence.
-      pitchBufferRef.current = [];
-      
-      // Optional: Delay setting state to 'unknown' to avoid flickering on missed frames
-      // But for now, we leave the last visual state or set to 0. 
-      // The gauge handles freq=0 gracefully (showing "--").
-      // However, we don't want to reset immediately if it's just one missed frame.
-      // Let's just do nothing here, the gauge will hold the previous value until the loop clears or finding a new note.
-      // Actually, to show "Listening..." we should probably update occasionally if silence persists.
-      // For simplicity in this refined version:
-      // If buffer is empty (persistent silence), we update status to null.
-      if (pitchBufferRef.current.length === 0) {
-          // This creates a smoother falloff to silence
-         // We can choose to update the UI to "Listening..." if we really want
+    if (result.frequency === -1) {
+      // Silence detected — decay the buffer gradually
+      const pitchBuffer = pitchBufferRef.current;
+      if (pitchBuffer.length > 0) {
+        // Remove oldest sample on silence to slowly fade
+        pitchBuffer.shift();
+      }
+      if (pitchBuffer.length === 0) {
+        // Full silence: release the lock
+        lockOnCountRef.current = 0;
+        lockedFrequencyRef.current = null;
+      }
+    } else {
+      // --- New valid sample ---
+      const pitchBuffer = pitchBufferRef.current;
+      pitchBuffer.push({ frequency: result.frequency, clarity: result.clarity });
+      if (pitchBuffer.length > PITCH_BUFFER_SIZE) pitchBuffer.shift();
+
+      // --- Lock-on logic ---
+      // Detect if this is a "new pluck" (sudden transient) that should reset the lock.
+      // A new pluck is detected when the frequency shifts significantly from the locked value.
+      if (lockedFrequencyRef.current !== null) {
+        const centsDrift = Math.abs(1200 * Math.log(result.frequency / lockedFrequencyRef.current) / Math.log(2));
+        if (centsDrift > 50) {
+          // Major frequency shift = new pluck, release lock
+          lockOnCountRef.current = 0;
+          lockedFrequencyRef.current = null;
+          pitchBufferRef.current = [{ frequency: result.frequency, clarity: result.clarity }];
+        }
       }
 
-    } else {
-      // Add to buffer
-      const pitchBuffer = pitchBufferRef.current;
-      pitchBuffer.push(rawFrequency);
-      if (pitchBuffer.length > 5) pitchBuffer.shift(); // Keep last 5 frames
+      // Count consecutive high-clarity frames
+      if (result.clarity >= LOCK_ON_CLARITY_THRESHOLD) {
+        lockOnCountRef.current++;
+      } else {
+        lockOnCountRef.current = Math.max(0, lockOnCountRef.current - 1);
+      }
 
-      // Calculate Median Frequency
-      // Copy to avoid sorting the ref array order
-      const sorted = [...pitchBuffer].sort((a, b) => a - b);
-      const medianFrequency = sorted[Math.floor(sorted.length / 2)];
+      // --- Calculate weighted frequency ---
+      let frequency: number;
 
-      const frequency = medianFrequency;
-      
-      // --- Standard Logic with Smoothed Frequency ---
+      if (lockOnCountRef.current >= LOCK_ON_FRAMES_REQUIRED && lockedFrequencyRef.current !== null) {
+        // LOCKED: use the locked frequency (ultra-stable needle)
+        // But gently drift towards the latest weighted average to stay responsive
+        const weightedAvg = getWeightedFrequency(pitchBuffer);
+        frequency = lockedFrequencyRef.current * 0.85 + weightedAvg * 0.15;
+        lockedFrequencyRef.current = frequency; // update lock point
+      } else {
+        // NOT LOCKED: use clarity-weighted average
+        frequency = getWeightedFrequency(pitchBuffer);
+
+        // Check if we should engage the lock
+        if (lockOnCountRef.current >= LOCK_ON_FRAMES_REQUIRED) {
+          lockedFrequencyRef.current = frequency;
+        }
+      }
+
+      // --- Standard pitch logic with the stabilized frequency ---
       const noteNum = noteFromPitch(frequency);
-      
-      // Calculate target note
-      let targetNoteNum = noteNum; // Default to chromatic closest
       let targetFrequency = frequencyFromNoteNumber(noteNum);
-      
-      // If manual string selected, force comparison against that string
+
+      const currentTuning = TUNINGS.find(t => t.id === tuningId) || TUNINGS[0];
+      const activeStrings = currentTuning.strings.map(s => ({
+        ...s,
+        frequency: s.frequency * Math.pow(2, pitchOffset / 12)
+      }));
+
       if (selectedString !== StringName.AUTO) {
-        const targetString = STANDARD_TUNING.find(s => s.name === selectedString);
+        const targetString = activeStrings.find(s => s.name === selectedString);
         if (targetString) {
-            const targetNoteNumber = noteFromPitch(targetString.frequency);
-            targetNoteNum = targetNoteNumber;
-            targetFrequency = targetString.frequency;
+          targetFrequency = targetString.frequency;
         }
       }
 
@@ -85,13 +142,12 @@ export const useTuner = () => {
       const octave = Math.floor(noteNum / 12) - 1;
 
       let deviation = 0;
-      
       if (selectedString === StringName.AUTO) {
-          deviation = centsOffFromPitch(frequency, noteNum);
+        deviation = centsOffFromPitch(frequency, noteNum);
       } else {
-          deviation = 1200 * Math.log(frequency / targetFrequency) / Math.log(2);
+        deviation = 1200 * Math.log(frequency / targetFrequency) / Math.log(2);
       }
-      
+
       const isInTune = Math.abs(deviation) <= IN_TUNE_THRESHOLD_CENTS;
 
       setTuningStatus({
@@ -107,14 +163,14 @@ export const useTuner = () => {
     }
 
     rafIdRef.current = requestAnimationFrame(updatePitch);
-  }, [selectedString]);
+  }, [selectedString, tuningId, pitchOffset]);
 
   const startListening = async () => {
     try {
       if (audioContextRef.current?.state === 'suspended') {
         await audioContextRef.current.resume();
       }
-      
+
       if (isListening) return;
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -133,7 +189,7 @@ export const useTuner = () => {
 
       setIsListening(true);
       setPermissionError(null);
-      
+
       updatePitch();
     } catch (err: any) {
       console.error("Microphone access denied or error:", err);
@@ -147,21 +203,23 @@ export const useTuner = () => {
       cancelAnimationFrame(rafIdRef.current);
     }
     if (sourceRef.current) {
-        sourceRef.current.disconnect();
+      sourceRef.current.disconnect();
     }
     if (analyserRef.current) {
-        analyserRef.current.disconnect();
+      analyserRef.current.disconnect();
     }
     if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach(track => track.stop());
     }
     if (audioContextRef.current) {
-        audioContextRef.current.close();
+      audioContextRef.current.close();
     }
-    
+
     setIsListening(false);
     setTuningStatus({ note: null, frequency: 0, deviation: 0, isInTune: false });
     pitchBufferRef.current = [];
+    lockOnCountRef.current = 0;
+    lockedFrequencyRef.current = null;
   };
 
   useEffect(() => {
@@ -171,11 +229,11 @@ export const useTuner = () => {
   }, []);
 
   useEffect(() => {
-      if (isListening) {
-          if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
-          updatePitch();
-      }
-  }, [selectedString, isListening, updatePitch]);
+    if (isListening) {
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+      updatePitch();
+    }
+  }, [selectedString, tuningId, pitchOffset, isListening, updatePitch]);
 
   return {
     isListening,
@@ -184,6 +242,14 @@ export const useTuner = () => {
     tuningStatus,
     selectedString,
     setSelectedString,
-    permissionError
+    tuningId,
+    setTuningId,
+    pitchOffset,
+    setPitchOffset,
+    permissionError,
+    activeStrings: TUNINGS.find(t => t.id === tuningId)?.strings.map(s => ({
+      ...s,
+      frequency: s.frequency * Math.pow(2, pitchOffset / 12)
+    })) || TUNINGS[0].strings
   };
 };

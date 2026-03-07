@@ -12,12 +12,12 @@ export interface TuningStatus {
 }
 
 export enum StringName {
-  E2 = 'E2',
-  A2 = 'A2',
-  D3 = 'D3',
-  G3 = 'G3',
-  B3 = 'B3',
-  E4 = 'E4',
+  STRING_6 = '6',
+  STRING_5 = '5',
+  STRING_4 = '4',
+  STRING_3 = '3',
+  STRING_2 = '2',
+  STRING_1 = '1',
   AUTO = 'AUTO'
 }
 
@@ -25,6 +25,13 @@ export interface GuitarString {
   name: StringName;
   frequency: number;
   label: string;
+  octave: number;
+}
+
+export interface TuningConfig {
+  id: string;
+  name: string;
+  strings: GuitarString[];
 }
 
 export type NoteDetectionConfig = {
