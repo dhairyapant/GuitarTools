@@ -24,10 +24,10 @@ export const TunerGauge: React.FC<TunerGaugeProps> = ({ status }) => {
   const octaveDisplay = note ? note.octave : '';
 
   return (
-    <div className="relative flex flex-col items-center justify-center w-full max-w-sm aspect-square mx-auto my-4 overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center w-full max-w-xs aspect-square mx-auto my-1.5 overflow-hidden">
 
       {/* Main Container */}
-      <div className="w-[22rem] h-[22rem] rounded-full flex items-center justify-center relative">
+      <div className="w-[18rem] h-[18rem] rounded-full flex items-center justify-center relative">
 
         {/* Gauge Arc Background */}
         <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">
@@ -42,37 +42,37 @@ export const TunerGauge: React.FC<TunerGaugeProps> = ({ status }) => {
         </svg>
 
         {/* Labels: String Status & Actions */}
-        <div className="absolute top-10 left-3 text-[10px] font-black text-red-500/40 tracking-widest uppercase w-20 leading-tight">
+        <div className="absolute top-8 left-2 text-[9px] font-black text-red-500/40 tracking-widest uppercase w-16 leading-tight">
           String is<br />Loose
         </div>
 
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 text-xs font-black text-cyan-400 tracking-widest uppercase transition-all duration-300">
+        <div className="absolute top-5 left-1/2 -translate-x-1/2 text-[10px] font-black text-cyan-400 tracking-widest uppercase transition-all duration-300">
           {isInTune ? 'Perfect' : (deviation < 0 ? 'Tighten' : 'Loosen')}
         </div>
 
-        <div className="absolute top-10 right-3 text-[10px] font-black text-red-500/40 tracking-widest uppercase text-right w-20 leading-tight">
+        <div className="absolute top-8 right-2 text-[9px] font-black text-red-500/40 tracking-widest uppercase text-right w-16 leading-tight">
           String is<br />Tight
         </div>
 
         {/* Center Ticking / Perfect Marker */}
-        <div className={`absolute top-10 left-1/2 -ml-[1px] h-4 w-[2px] rounded-full transition-all duration-300 ${isInTune ? 'bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)]' : 'bg-slate-700'}`}></div>
+        <div className={`absolute top-8 left-1/2 -ml-[1px] h-3.5 w-[2px] rounded-full transition-all duration-300 ${isInTune ? 'bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)]' : 'bg-slate-700'}`}></div>
 
         {/* Digital Info Display */}
-        <div className="flex flex-col items-center z-10 -mt-10">
-          <div className="flex items-baseline gap-1">
-            <span className="text-[10rem] leading-none font-black text-white tracking-tighter drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]">
+        <div className="flex flex-col items-center z-10 -mt-8">
+          <div className="flex items-baseline gap-0.5">
+            <span className="text-[7.5rem] leading-none font-black text-white tracking-tighter drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]">
               {noteDisplay}
             </span>
-            <span className="text-4xl font-bold text-cyan-500/50 mb-2">
+            <span className="text-2xl font-bold text-cyan-500/50 mb-1">
               {octaveDisplay}
             </span>
           </div>
 
-          <div className="flex flex-col items-center gap-2 mt-2">
-            <span className={`text-5xl font-mono font-black tabular-nums transition-colors duration-300 ${isInTune ? 'text-cyan-400' : 'text-white'}`}>
+          <div className="flex flex-col items-center gap-1 mt-1">
+            <span className={`text-4xl font-mono font-black tabular-nums transition-colors duration-300 ${isInTune ? 'text-cyan-400' : 'text-white'}`}>
               {status.frequency > 0 ? (deviation > 0 ? `+${deviation.toFixed(1)}` : deviation.toFixed(1)) : '0.0'}
             </span>
-            <span className={`text-base font-black uppercase tracking-[0.3em] ${isInTune ? 'text-cyan-400' : (Math.abs(deviation) < 1.5 ? 'text-yellow-400' : 'text-slate-500')}`}>
+            <span className={`text-xs font-black uppercase tracking-[0.3em] ${isInTune ? 'text-cyan-400' : (Math.abs(deviation) < 1.5 ? 'text-yellow-400' : 'text-slate-500')}`}>
               {status.frequency > 0 ? (isInTune ? 'Perfect' : (deviation < 0 ? 'Flat' : 'Sharp')) : 'Waiting'}
             </span>
           </div>
@@ -84,23 +84,21 @@ export const TunerGauge: React.FC<TunerGaugeProps> = ({ status }) => {
           style={{ transform: `rotate(${rotation}deg)` }}
         >
           {/* Needle */}
-          <div className={`absolute top-10 left-1/2 -ml-[1px] h-24 w-[2px] rounded-full ${needleColor} ${needleGlow} transition-colors duration-300`}></div>
+          <div className={`absolute top-8 left-1/2 -ml-[1px] h-20 w-[2px] rounded-full ${needleColor} ${needleGlow} transition-colors duration-300`}></div>
 
           {/* Bottom Needle Glow (Focus) */}
-          <div className={`absolute top-10 left-1/2 -ml-1.5 w-3 h-3 rounded-full blur-md opacity-50 ${isInTune ? 'bg-cyan-300' : 'bg-cyan-500'}`}></div>
+          <div className={`absolute top-8 left-1/2 -ml-1 w-2.5 h-2.5 rounded-full blur-md opacity-50 ${isInTune ? 'bg-cyan-300' : 'bg-cyan-500'}`}></div>
         </div>
 
         {/* Pivot Point */}
-        <div className="absolute bottom-[84px] left-1/2 -ml-1.5 w-3 h-3 rounded-full bg-slate-800 border-2 border-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.4)] z-30"></div>
+        <div className="absolute bottom-[68px] left-1/2 -ml-1.5 w-3 h-3 rounded-full bg-slate-800 border-2 border-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.4)] z-30"></div>
       </div>
 
       {/* Hertz Readout */}
-      <div className="mt-6 flex flex-col items-center justify-center gap-2">
-        <div className="text-xs font-bold text-slate-600 uppercase tracking-widest">
-          {status.frequency > 0 ? `${status.frequency.toFixed(2)} Hz (Avg)` : '--- Hz'}
-        </div>
-        <div className="text-[11px] font-medium text-slate-700/60 uppercase tracking-widest">
-          {status.rawFrequency > 0 ? `${status.rawFrequency.toFixed(2)} Hz (Raw)` : '--- Hz'}
+      <div className="mt-3 flex flex-col items-center justify-center">
+        <div className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">
+          {status.frequency > 0 ? `${status.frequency.toFixed(2)} Hz` : '--- Hz'}
+          {status.rawFrequency > 0 && ` (Raw: ${status.rawFrequency.toFixed(1)} Hz)`}
         </div>
       </div>
     </div>

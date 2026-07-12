@@ -1,5 +1,6 @@
 import React from 'react';
 import { Mic, Music, Timer, Settings, Activity } from 'lucide-react';
+import logoUrl from '../guitar_tool_logo.png';
 
 interface MicAccessOverlayProps {
     onStart: () => void;
@@ -20,17 +21,17 @@ export const MicAccessOverlay: React.FC<MicAccessOverlayProps> = ({ onStart, err
 
             <div className="w-full max-w-sm flex flex-col items-center text-center z-10">
 
-                {/* Pulsing Mic Button */}
+                {/* Pulsing Logo Button */}
                 <div className="relative mb-12">
                     <div className="absolute inset-0 bg-cyan-500 rounded-full blur-2xl opacity-20 animate-pulse-fast"></div>
                     <button
                         onClick={onStart}
-                        className="group relative bg-gradient-to-br from-cyan-500 to-blue-600 w-32 h-32 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(6,182,212,0.3)] transform transition-all active:scale-95 hover:scale-105"
+                        className="group relative bg-gradient-to-br from-cyan-500 to-blue-600 w-32 h-32 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(6,182,212,0.3)] transform transition-all active:scale-95 hover:scale-105 overflow-hidden border-2 border-slate-700/50"
                     >
-                        <Mic className="w-14 h-14 text-white drop-shadow-lg" />
+                        <img src={logoUrl} alt="Guitar Tool Logo" className="w-full h-full object-cover" />
 
                         {/* Inner ring animation */}
-                        <div className="absolute inset-0 border-4 border-white/20 rounded-full animate-ping pointer-events-none" style={{ animationDuration: '3s' }}></div>
+                        <div className="absolute inset-0 border-4 border-white/25 rounded-full animate-ping pointer-events-none" style={{ animationDuration: '3s' }}></div>
                     </button>
                 </div>
 
@@ -58,10 +59,6 @@ export const MicAccessOverlay: React.FC<MicAccessOverlayProps> = ({ onStart, err
                 >
                     <span>Grant Access & Start Tuning</span>
                 </button>
-
-                <p className="mt-8 text-slate-500 text-sm uppercase tracking-[0.2em] font-bold">
-                    Step 1: Calibration
-                </p>
             </div>
 
         </div>
