@@ -293,7 +293,7 @@ function App() {
                 <div className="bg-slate-950/50 rounded-2xl p-4 border border-slate-800/60 space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-slate-400 text-xs font-bold">Version</span>
-                    <span className="bg-cyan-500/10 text-cyan-400 text-[10px] px-2.5 py-0.5 rounded-full font-black">v1.0.0</span>
+                    <span className="bg-cyan-500/10 text-cyan-400 text-[10px] px-2.5 py-0.5 rounded-full font-black">v1.0.1</span>
                   </div>
 
                   <div className="border-t border-slate-800/60 pt-3">
@@ -375,7 +375,7 @@ function App() {
             {/* Drawer Footer */}
             <div className="p-6 border-t border-slate-800/60 bg-slate-950/20 text-center">
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                Guitar Tool • v1.0.0
+                Guitar Tool • v1.0.1
               </p>
             </div>
           </div>
