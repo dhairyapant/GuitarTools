@@ -34,11 +34,11 @@ export const MicAccessOverlay: React.FC<MicAccessOverlayProps> = ({ onStart, err
                     </button>
                 </div>
 
-                <h2 className="text-3xl font-black mb-4 tracking-tight text-white">
+                <h2 className="text-4xl font-black mb-5 tracking-tight text-white">
                     Microphone Access Required
                 </h2>
 
-                <p className="text-slate-400 text-lg leading-relaxed mb-8 font-medium">
+                <p className="text-slate-400 text-xl leading-relaxed mb-10 font-medium">
                     To tune your guitar, we need permission to use your microphone. We'll only listen while the app is active.
                 </p>
 
@@ -54,12 +54,12 @@ export const MicAccessOverlay: React.FC<MicAccessOverlayProps> = ({ onStart, err
 
                 <button
                     onClick={onStart}
-                    className="w-full bg-slate-800 hover:bg-slate-700 text-cyan-400 font-bold py-4 px-8 rounded-2xl border border-slate-700 transition-all shadow-lg active:scale-[0.98] flex items-center justify-center gap-3"
+                    className="w-full bg-slate-800 hover:bg-slate-700 text-cyan-400 font-bold py-5 px-8 text-xl rounded-2xl border border-slate-700 transition-all shadow-lg active:scale-[0.98] flex items-center justify-center gap-3"
                 >
                     <span>Grant Access & Start Tuning</span>
                 </button>
 
-                <p className="mt-6 text-slate-500 text-xs uppercase tracking-[0.2em] font-bold">
+                <p className="mt-8 text-slate-500 text-sm uppercase tracking-[0.2em] font-bold">
                     Step 1: Calibration
                 </p>
             </div>

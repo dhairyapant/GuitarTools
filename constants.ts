@@ -67,6 +67,6 @@ export const ALL_NOTES: string[] = [
 ];
 
 // Audio Context Constants
-export const BUFFER_SIZE = 2048;
+export const BUFFER_SIZE = 4096;
 export const CLARITY_THRESHOLD = 0.9;
 export const IN_TUNE_THRESHOLD_CENTS = 5; 

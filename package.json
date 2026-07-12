@@ -1,7 +1,7 @@
 {
   "name": "g-tune-pro",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -16,6 +16,7 @@
     "@capacitor/cli": "^8.0.2",
     "@capacitor/core": "^8.0.2",
     "lucide-react": "^0.562.0",
+    "pitchfinder": "^2.3.4",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
   },

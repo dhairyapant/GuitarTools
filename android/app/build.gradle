@@ -1,14 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "com.gtunepro.app"
+    namespace = "com.travelfalltech.guitartool"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.gtunepro.app"
+        applicationId "com.travelfalltech.guitartool"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -18,10 +18,10 @@ android {
     }
     signingConfigs {
         release {
-            storeFile file('release-key.keystore')
-            storePassword 'android'
-            keyAlias 'release-key'
-            keyPassword 'android'
+            storeFile file(System.getenv("ANDROID_KEYSTORE_FILE") ?: "release-key.keystore")
+            storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: "android"
+            keyAlias System.getenv("ANDROID_KEY_ALIAS") ?: "release-key"
+            keyPassword System.getenv("ANDROID_KEY_PASSWORD") ?: "android"
         }
     }
     buildTypes {

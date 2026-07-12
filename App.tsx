@@ -93,13 +93,13 @@ function App() {
 
       {/* Header */}
       <header className="w-full pt-[env(safe-area-inset-top,48px)] pb-4 px-6 flex items-center justify-between z-10">
-        <h1 className="text-xl font-black tracking-tight text-white uppercase italic">
-          Guitar Tools
+        <h1 className="text-3xl font-black tracking-tight text-white uppercase italic">
+          Guitar Tool
         </h1>
 
-        <div className="flex items-center gap-2 bg-slate-900/50 backdrop-blur-sm px-3 py-1.5 rounded-full border border-slate-800">
-          <div className={`w-2 h-2 rounded-full ${isListening ? 'bg-cyan-400 animate-pulse-fast shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'bg-slate-700'}`}></div>
-          <span className={`text-[10px] font-black uppercase tracking-widest ${isListening ? 'text-cyan-400' : 'text-slate-500'}`}>
+        <div className="flex items-center gap-2 bg-slate-900/50 backdrop-blur-sm px-4 py-2 rounded-full border border-slate-800">
+          <div className={`w-3 h-3 rounded-full ${isListening ? 'bg-cyan-400 animate-pulse-fast shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'bg-slate-700'}`}></div>
+          <span className={`text-xs font-black uppercase tracking-widest ${isListening ? 'text-cyan-400' : 'text-slate-500'}`}>
             {isListening ? 'Mic Live' : 'Mic Idle'}
           </span>
         </div>
@@ -115,13 +115,13 @@ function App() {
           <div className="relative">
             <button
               onClick={() => setShowDropdown(!showDropdown)}
-              className="flex items-center gap-3 bg-slate-900/80 px-5 py-2.5 rounded-2xl border border-slate-800/50 min-w-[200px] justify-between"
+              className="flex items-center gap-3 bg-slate-900/80 px-6 py-3 rounded-2xl border border-slate-800/50 min-w-[220px] justify-between"
             >
               <div className="flex flex-col items-start">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">Tuning</span>
-                <span className="text-sm font-black text-white uppercase tracking-tight">{currentTuning.name}</span>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest leading-none">Tuning</span>
+                <span className="text-lg font-black text-white uppercase tracking-tight">{currentTuning.name}</span>
               </div>
-              <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
             </button>
 
             {/* Dropdown Menu */}
@@ -131,12 +131,12 @@ function App() {
                   <button
                     key={t.id}
                     onClick={() => { setTuningId(t.id); setShowDropdown(false); }}
-                    className={`w-full text-left px-5 py-3 text-sm font-bold transition-colors flex items-center justify-between
+                    className={`w-full text-left px-6 py-4 text-base font-bold transition-colors flex items-center justify-between
                         ${t.id === tuningId ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-300 hover:bg-slate-800'}
                       `}
                   >
                     <span>{t.name}</span>
-                    <span className="text-[10px] font-mono text-slate-500">
+                    <span className="text-xs font-mono text-slate-500">
                       {t.strings.map(s => s.label).join(' ')}
                     </span>
                   </button>
@@ -146,21 +146,21 @@ function App() {
           </div>
 
           {/* Pitch Offset Controls (+/- half step) */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <button
               onClick={handlePitchDown}
               disabled={pitchOffset <= PITCH_OFFSETS[PITCH_OFFSETS.length - 1].value}
-              className="p-2 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              className="p-3 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              <Minus className="w-4 h-4 text-slate-400" />
+              <Minus className="w-5 h-5 text-slate-400" />
             </button>
 
-            <div className="flex flex-col items-center min-w-[140px] bg-slate-900/60 px-4 py-2 rounded-xl border border-slate-800/40">
-              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-none">Key</span>
-              <span className="text-base font-black text-white tracking-tight">{rootKey}</span>
-              <span className="text-[9px] font-mono text-cyan-500/60 tracking-wide mt-0.5">{tuningSummary}</span>
+            <div className="flex flex-col items-center min-w-[160px] bg-slate-900/60 px-5 py-3 rounded-xl border border-slate-800/40">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest leading-none">Key</span>
+              <span className="text-2xl font-black text-white tracking-tight">{rootKey}</span>
+              <span className="text-xs font-mono text-cyan-500/60 tracking-wide mt-1">{tuningSummary}</span>
               {pitchOffset !== 0 && (
-                <span className="text-[9px] font-bold text-amber-400/80 mt-0.5">
+                <span className="text-[11px] font-bold text-amber-400/80 mt-1">
                   {pitchOffset > 0 ? `+${pitchOffset / 2}` : `${pitchOffset / 2}`} step{Math.abs(pitchOffset) !== 1 ? 's' : ''}
                 </span>
               )}
@@ -169,9 +169,9 @@ function App() {
             <button
               onClick={handlePitchUp}
               disabled={pitchOffset >= PITCH_OFFSETS[0].value}
-              className="p-2 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              className="p-3 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              <Plus className="w-4 h-4 text-slate-400" />
+              <Plus className="w-5 h-5 text-slate-400" />
             </button>
           </div>
 
@@ -179,14 +179,14 @@ function App() {
           <button
             onClick={() => setSelectedString(selectedString === StringName.AUTO ? StringName.STRING_6 : StringName.AUTO)}
             className={`
-              flex items-center gap-3 px-6 py-3 rounded-full font-black text-xs uppercase tracking-widest transition-all
+              flex items-center gap-3 px-8 py-4 rounded-full font-black text-sm uppercase tracking-widest transition-all
               ${selectedString === StringName.AUTO
                 ? 'bg-cyan-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.4)]'
                 : 'bg-slate-900 text-slate-500 border border-slate-800'
               }
             `}
           >
-            {selectedString === StringName.AUTO && <Check className="w-4 h-4" />}
+            {selectedString === StringName.AUTO && <Check className="w-5 h-5" />}
             <span>Auto Select String</span>
           </button>
         </div>
@@ -205,33 +205,33 @@ function App() {
       {/* Controls Footer */}
       <footer className="w-full p-8 flex flex-col items-center gap-6 z-10 bg-gradient-to-t from-slate-950 to-transparent">
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           {isListening && (
             <button
               onClick={stopListening}
-              className="group flex flex-col items-center gap-2 p-2"
+              className="group flex flex-col items-center gap-3 p-3"
             >
-              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-full group-hover:bg-red-500/20 group-hover:border-red-500/40 transition-all">
-                <MicOff className="w-5 h-5 text-red-400" />
+              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-full group-hover:bg-red-500/20 group-hover:border-red-500/40 transition-all">
+                <MicOff className="w-6 h-6 text-red-400" />
               </div>
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Stop</span>
+              <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Stop</span>
             </button>
           )}
 
           <button
             onClick={toggleWakeLock}
-            className="group flex flex-col items-center gap-2 p-2"
+            className="group flex flex-col items-center gap-3 p-3"
           >
-            <div className={`p-3 rounded-full border transition-all ${isAwake ? 'bg-amber-500/10 border-amber-500/30' : 'bg-slate-900 border-slate-800'}`}>
-              {isAwake ? <Sun className="w-5 h-5 text-amber-400 animate-pulse-fast" /> : <Moon className="w-5 h-5 text-slate-500" />}
+            <div className={`p-4 rounded-full border transition-all ${isAwake ? 'bg-amber-500/10 border-amber-500/30' : 'bg-slate-900 border-slate-800'}`}>
+              {isAwake ? <Sun className="w-6 h-6 text-amber-400 animate-pulse-fast" /> : <Moon className="w-6 h-6 text-slate-500" />}
             </div>
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+            <span className="text-xs font-black text-slate-500 uppercase tracking-widest">
               {isAwake ? 'Awake' : 'Sleep'}
             </span>
           </button>
         </div>
 
-        <div className="text-[10px] font-bold text-slate-800 uppercase tracking-[0.4em]">
+        <div className="text-xs font-bold text-slate-800 uppercase tracking-[0.4em]">
           Engine 2.0.4
         </div>
       </footer>

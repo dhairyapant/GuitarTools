@@ -6,7 +6,8 @@ export interface Note {
 
 export interface TuningStatus {
   note: Note | null;
-  frequency: number;
+  frequency: number; // Smoothed frequency
+  rawFrequency: number; // Un-smoothed frequency for display
   deviation: number; // Cents
   isInTune: boolean;
 }

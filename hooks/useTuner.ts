@@ -8,9 +8,6 @@ interface PitchSample {
   clarity: number;
 }
 
-// Lock-on: how many consecutive high-clarity frames to "lock" the needle
-const LOCK_ON_CLARITY_THRESHOLD = 0.85;
-const LOCK_ON_FRAMES_REQUIRED = 3;
 const PITCH_BUFFER_SIZE = 7; // rolling window of samples
 
 /** Clarity-weighted average: high-confidence frames dominate the result */
@@ -36,6 +33,7 @@ export const useTuner = () => {
   const [tuningStatus, setTuningStatus] = useState<TuningStatus>({
     note: null,
     frequency: 0,
+    rawFrequency: 0,
     deviation: 0,
     isInTune: false
   });
@@ -52,8 +50,6 @@ export const useTuner = () => {
 
   // Weighted temporal stability buffers
   const pitchBufferRef = useRef<PitchSample[]>([]);
-  const lockOnCountRef = useRef<number>(0);
-  const lockedFrequencyRef = useRef<number | null>(null);
 
   const updatePitch = useCallback(() => {
     if (!analyserRef.current || !audioContextRef.current) return;
@@ -72,9 +68,7 @@ export const useTuner = () => {
         pitchBuffer.shift();
       }
       if (pitchBuffer.length === 0) {
-        // Full silence: release the lock
-        lockOnCountRef.current = 0;
-        lockedFrequencyRef.current = null;
+        // Full silence: the buffer is empty
       }
     } else {
       // --- New valid sample ---
@@ -82,44 +76,9 @@ export const useTuner = () => {
       pitchBuffer.push({ frequency: result.frequency, clarity: result.clarity });
       if (pitchBuffer.length > PITCH_BUFFER_SIZE) pitchBuffer.shift();
 
-      // --- Lock-on logic ---
-      // Detect if this is a "new pluck" (sudden transient) that should reset the lock.
-      // A new pluck is detected when the frequency shifts significantly from the locked value.
-      if (lockedFrequencyRef.current !== null) {
-        const centsDrift = Math.abs(1200 * Math.log(result.frequency / lockedFrequencyRef.current) / Math.log(2));
-        if (centsDrift > 50) {
-          // Major frequency shift = new pluck, release lock
-          lockOnCountRef.current = 0;
-          lockedFrequencyRef.current = null;
-          pitchBufferRef.current = [{ frequency: result.frequency, clarity: result.clarity }];
-        }
-      }
-
-      // Count consecutive high-clarity frames
-      if (result.clarity >= LOCK_ON_CLARITY_THRESHOLD) {
-        lockOnCountRef.current++;
-      } else {
-        lockOnCountRef.current = Math.max(0, lockOnCountRef.current - 1);
-      }
-
       // --- Calculate weighted frequency ---
-      let frequency: number;
-
-      if (lockOnCountRef.current >= LOCK_ON_FRAMES_REQUIRED && lockedFrequencyRef.current !== null) {
-        // LOCKED: use the locked frequency (ultra-stable needle)
-        // But gently drift towards the latest weighted average to stay responsive
-        const weightedAvg = getWeightedFrequency(pitchBuffer);
-        frequency = lockedFrequencyRef.current * 0.85 + weightedAvg * 0.15;
-        lockedFrequencyRef.current = frequency; // update lock point
-      } else {
-        // NOT LOCKED: use clarity-weighted average
-        frequency = getWeightedFrequency(pitchBuffer);
-
-        // Check if we should engage the lock
-        if (lockOnCountRef.current >= LOCK_ON_FRAMES_REQUIRED) {
-          lockedFrequencyRef.current = frequency;
-        }
-      }
+      // Use clarity-weighted average entirely for smooth response
+      const frequency = getWeightedFrequency(pitchBuffer);
 
       // --- Standard pitch logic with the stabilized frequency ---
       const noteNum = noteFromPitch(frequency);
@@ -157,6 +116,7 @@ export const useTuner = () => {
           frequency: frequency
         },
         frequency,
+        rawFrequency: result.frequency,
         deviation,
         isInTune
       });
@@ -216,10 +176,8 @@ export const useTuner = () => {
     }
 
     setIsListening(false);
-    setTuningStatus({ note: null, frequency: 0, deviation: 0, isInTune: false });
+    setTuningStatus({ note: null, frequency: 0, rawFrequency: 0, deviation: 0, isInTune: false });
     pitchBufferRef.current = [];
-    lockOnCountRef.current = 0;
-    lockedFrequencyRef.current = null;
   };
 
   useEffect(() => {

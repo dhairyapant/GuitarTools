@@ -1,4 +1,4 @@
-package com.gtunepro.app;
+package com.travelfalltech.guitartool;
 
 import com.getcapacitor.BridgeActivity;
 
